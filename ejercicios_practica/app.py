@@ -24,6 +24,7 @@ __version__ = "1.2"
 
 # Realizar HTTP POST --> post.py
 
+import re
 import traceback
 import io
 import sys
@@ -35,6 +36,7 @@ from datetime import datetime, timedelta
 import numpy as np
 from flask import Flask, request, jsonify, render_template, Response, redirect
 import matplotlib
+from sqlalchemy.sql.operators import is_distinct_from
 matplotlib.use('Agg')   # For multi thread, non-interactive backend (avoid run in main loop)
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
@@ -100,10 +102,19 @@ def personas():
 
         # Debe verificar si el limit y offset son válidos cuando
         # no son especificados en la URL
-
+        limit_str = str(request.args.get('limit'))
+        offset_str = str(request.args.get('offset'))
+        
         limit = 0
         offset = 0
 
+        if (limit_str is not None) and (limit_str.isdigit()):
+            limit = int(limit_str)
+            
+        
+        if(offset_str is not None) and (offset_str.isdigit()):
+            offset = int(offset_str)
+        
         result = persona.report(limit=limit, offset=offset)
         return jsonify(result)
     except:
@@ -113,6 +124,7 @@ def personas():
 @app.route("/comparativa")
 def comparativa():
     try:
+        """
         # Alumno:
         result = '''<h3>Implementar una función en persona.py
                     nationality_review</h3>'''
@@ -122,6 +134,8 @@ def comparativa():
         result += '''<h3>Esa funcion debe devolver los datos que necesite
                     para implementar el grafico a mostrar</h3>'''
         return (result)
+        """
+        return persona.nationality_review()
     except:
         return jsonify({'trace': traceback.format_exc()})
 
@@ -137,6 +151,14 @@ def registro():
             # nationality = ...
 
             # persona.insert(name, int(age), nationality)
+            
+            name = str(request.form.get('name'))
+            age = str(request.form.get('age'))
+            nationality = str(request.form.get('nationality'))
+            
+            if (name is None or nationality is None or age is  None or age.isdigit() is False):
+                return Response(status=400)
+            persona.insert(name,int(age),nationality)
             return Response(status=200)
         except:
             return jsonify({'trace': traceback.format_exc()})

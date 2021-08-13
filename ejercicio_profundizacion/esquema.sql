@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS listado;
+
+CREATE TABLE listado(
+    [id] INTEGER PRIMARY KEY AUTOINCREMENT,
+    [userId] INTEGER NOT NULL,
+    [title] TEXT NOT NULL,
+    [completed] TEXT NOT NULL
+);

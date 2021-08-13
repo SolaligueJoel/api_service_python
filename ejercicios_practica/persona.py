@@ -14,13 +14,23 @@ __email__ = "alumnos@inove.com.ar"
 __version__ = "1.2"
 
 
+from flask import json
 import sqlalchemy
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy import func
+import matplotlib.pyplot as plt
+import io
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from flask import Response
+from matplotlib.figure import Figure
+import numpy as np
+from collections import OrderedDict
+
 
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.utils import send_file
 db = SQLAlchemy()
 
 class Persona(db.Model):
@@ -31,7 +41,7 @@ class Persona(db.Model):
     nationality = db.Column(String)
     
     def __repr__(self):
-        return f"Persona:{self.name} con nacionalidad {self.nacionalidad}"
+        return f"Persona:{self.name} con nacionalidad {self.nationality}"
 
 
 def create_schema():
@@ -71,3 +81,43 @@ def report(limit=0, offset=0):
         json_result_list.append(json_result)
 
     return json_result_list
+
+def nationality_review():
+    query = db.session.query(Persona)
+    
+    listnat = [x.nationality for x in query]
+    listx = [x.id for x in query]
+    listy = [x.age for x in query]
+    new_listnat = list(OrderedDict.fromkeys(listnat))
+    lenlist = int(len(listx)+1)
+    
+    count_list = []
+    for x in new_listnat:
+        count_list.append(listnat.count(x))
+    
+    
+    
+    fig = Figure(figsize=(15,7))
+    fig.tight_layout()
+    
+    ax = fig.add_subplot(1,3,1)
+    ax.set_title("Nacionalidades",fontsize=24)
+    ax.pie(count_list,labels = new_listnat,autopct='%1.0f%%',shadow=True)
+    ax.axis('equal')
+    
+    
+    ax1 = fig.add_subplot(1,3,3)
+
+    ax1.bar(listx,listy,color="purple")
+    ax1.set_facecolor("bisque")
+    ax1.set_xticks(range(1,lenlist,1))
+    
+    ax1.set_title('Edades',fontsize=24)
+    ax1.set_xlabel('Ids')
+    ax1.set_ylabel('Edad')
+    
+    
+    output = io.BytesIO()
+    FigureCanvas(fig).print_png(output)
+        
+    return Response(output.getvalue(), mimetype='image/png') 
